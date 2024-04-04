@@ -1,10 +1,20 @@
 defmodule PingPongMeasurerRclex.Ping do
   use GenServer
 
+  require Logger
+
   alias Rclex.Pkgs.StdMsgs
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
+  end
+
+  def node_name() do
+    GenServer.call(__MODULE__, :node_name)
+  end
+
+  def pong_node_count() do
+    GenServer.call(__MODULE__, :pong_node_count)
   end
 
   def init(args) do
@@ -27,20 +37,30 @@ defmodule PingPongMeasurerRclex.Ping do
         end
     end
 
+    callback = fn message -> Logger.debug("ping recv: #{inspect(message)}") end
+
     case sub do
       :single ->
         pong_topic = "/pong"
-        :ok = Rclex.start_subscription(fn _ -> nil end, StdMsgs.Msg.String, pong_topic, node_name)
+        :ok = Rclex.start_subscription(callback, StdMsgs.Msg.String, pong_topic, node_name)
 
       :multiple ->
         for index <- 0..(pong_node_count - 1) do
           pong_topic = "/pong" <> String.pad_leading("#{index}", 3, "0")
 
           :ok =
-            Rclex.start_subscription(fn _ -> nil end, StdMsgs.Msg.String, pong_topic, node_name)
+            Rclex.start_subscription(callback, StdMsgs.Msg.String, pong_topic, node_name)
         end
     end
 
-    {:ok, %{pong_node_count: pong_node_count}}
+    {:ok, %{pong_node_count: pong_node_count, node_name: node_name}}
+  end
+
+  def handle_call(:node_name, _from, state) do
+    {:reply, state.node_name, state}
+  end
+
+  def handle_call(:pong_node_count, _from, state) do
+    {:reply, state.pong_node_count, state}
   end
 end

@@ -20,13 +20,18 @@ defmodule PingPongMeasurerRclex do
 
   @doc """
   ## Examples
-      iex> start_ping_processes(10, :single, :single)
-      iex> start_ping_processes(10, :multiple, :single)
-      iex> start_ping_processes(10, :single, :multiple)
-      iex> start_ping_processes(10, :multiple, :multiple)
+      iex> start_ping_processes(10, :single, :single, 8)
+      iex> start_ping_processes(10, :multiple, :single, 8)
+      iex> start_ping_processes(10, :single, :multiple, 8)
+      iex> start_ping_processes(10, :multiple, :multiple, 8)
   """
-  def start_ping_processes(pong_node_count, pub, sub) do
-    Ping.start_link(pong_node_count: pong_node_count, pub: pub, sub: sub)
+  def start_ping_processes(pong_node_count, pub, sub, payload_size) do
+    Ping.start_link(
+      pong_node_count: pong_node_count,
+      pub: pub,
+      sub: sub,
+      payload_size: payload_size
+    )
   end
 
   def start_measurer_process(pong_node_count, pub, sub) do

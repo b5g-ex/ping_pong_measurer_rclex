@@ -12,16 +12,17 @@ defmodule PingPongMeasurerRclex.Ping do
 
   @doc """
   ## Examples
-      iex> start_measuring(8)
+      iex> start_measuring()
   """
-  def start_measuring(payload_size) do
-    GenServer.call(__MODULE__, {:start_measuring, payload_size})
+  def start_measuring() do
+    GenServer.call(__MODULE__, :start_measuring)
   end
 
   def init(args) do
     pong_node_count = Keyword.fetch!(args, :pong_node_count)
     pub = Keyword.fetch!(args, :pub)
     sub = Keyword.fetch!(args, :sub)
+    payload_size = Keyword.fetch!(args, :payload_size)
 
     node_name = "ping"
     :ok = Rclex.start_node(node_name)
@@ -38,11 +39,13 @@ defmodule PingPongMeasurerRclex.Ping do
         end
     end
 
+    me = self()
+
     callback = fn message ->
       # ここで計測終了
       time = System.monotonic_time(:microsecond)
       Measurer.stop_measuring(time, _index = String.slice(message.data, 0, 3))
-      Logger.debug("ping recv: #{inspect(message)}")
+      send(me, :pong_received)
     end
 
     case sub do
@@ -59,16 +62,50 @@ defmodule PingPongMeasurerRclex.Ping do
         end
     end
 
-    {:ok, %{pong_node_count: pong_node_count, pub: pub, sub: sub, node_name: node_name}}
+    {:ok,
+     %{
+       pong_node_count: pong_node_count,
+       pub: pub,
+       sub: sub,
+       node_name: node_name,
+       pong_received_count: 0,
+       ping_sent_count: 0,
+       payload_size: payload_size
+     }}
   end
 
-  def handle_call({:start_measuring, payload_size}, _from, state) do
+  def handle_call(:start_measuring, _from, state) do
+    start_measuring(state)
+    {:reply, :ok, state}
+  end
+
+  def handle_info(:pong_received, state) do
+    pong_received_count = state.pong_received_count + 1
+    Logger.info("#{pong_received_count}/#{state.pong_node_count}")
+
+    if pong_received_count < state.pong_node_count do
+      {:noreply, %{state | pong_received_count: pong_received_count}}
+    else
+      ping_sent_count = state.ping_sent_count + 1
+
+      if ping_sent_count < 100 do
+        Logger.info("GO NEXT: #{ping_sent_count}")
+        start_measuring(state)
+        {:noreply, %{state | pong_received_count: 0, ping_sent_count: ping_sent_count}}
+      else
+        Logger.info("THE END: #{ping_sent_count}")
+        {:noreply, %{state | pong_received_count: 0, ping_sent_count: 0}}
+      end
+    end
+  end
+
+  defp start_measuring(state) do
     case state.pub do
       :single ->
         ping_topic = "/ping000"
         # ここで計測開始
         index = String.slice(ping_topic, 5, 3)
-        payload = index <> String.duplicate("0", payload_size - String.length(index))
+        payload = index <> String.duplicate("0", state.payload_size - String.length(index))
         :ok = Measurer.start_measuring(System.monotonic_time(:microsecond), index)
 
         :ok =
@@ -89,7 +126,7 @@ defmodule PingPongMeasurerRclex.Ping do
         |> Flow.map(fn ping_topic ->
           # ここで計測開始
           index = String.slice(ping_topic, 5, 3)
-          payload = index <> String.duplicate("0", payload_size - String.length(index))
+          payload = index <> String.duplicate("0", state.payload_size - String.length(index))
           :ok = Measurer.start_measuring(System.monotonic_time(:microsecond), index)
 
           :ok =
@@ -101,7 +138,5 @@ defmodule PingPongMeasurerRclex.Ping do
         end)
         |> Enum.to_list()
     end
-
-    {:reply, :ok, state}
   end
 end

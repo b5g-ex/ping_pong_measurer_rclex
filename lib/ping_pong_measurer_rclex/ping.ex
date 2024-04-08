@@ -10,12 +10,12 @@ defmodule PingPongMeasurerRclex.Ping do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
-  def node_name() do
-    GenServer.call(__MODULE__, :node_name)
-  end
-
-  def pong_node_count() do
-    GenServer.call(__MODULE__, :pong_node_count)
+  @doc """
+  ## Examples
+      iex> start_measuring(8)
+  """
+  def start_measuring(payload_size) do
+    GenServer.call(__MODULE__, {:start_measuring, payload_size})
   end
 
   def init(args) do
@@ -59,14 +59,49 @@ defmodule PingPongMeasurerRclex.Ping do
         end
     end
 
-    {:ok, %{pong_node_count: pong_node_count, node_name: node_name}}
+    {:ok, %{pong_node_count: pong_node_count, pub: pub, sub: sub, node_name: node_name}}
   end
 
-  def handle_call(:node_name, _from, state) do
-    {:reply, state.node_name, state}
-  end
+  def handle_call({:start_measuring, payload_size}, _from, state) do
+    case state.pub do
+      :single ->
+        ping_topic = "/ping000"
+        # ここで計測開始
+        index = String.slice(ping_topic, 5, 3)
+        payload = index <> String.duplicate("0", payload_size - String.length(index))
+        :ok = Measurer.start_measuring(System.monotonic_time(:microsecond), index)
 
-  def handle_call(:pong_node_count, _from, state) do
-    {:reply, state.pong_node_count, state}
+        :ok =
+          Rclex.publish(
+            struct(StdMsgs.Msg.String, %{data: payload}),
+            ping_topic,
+            state.node_name
+          )
+
+      :multiple ->
+        ping_topics =
+          for index <- 0..(state.pong_node_count - 1) do
+            "/ping" <> String.pad_leading("#{index}", 3, "0")
+          end
+
+        ping_topics
+        |> Flow.from_enumerable(max_demand: 1, stages: state.pong_node_count)
+        |> Flow.map(fn ping_topic ->
+          # ここで計測開始
+          index = String.slice(ping_topic, 5, 3)
+          payload = index <> String.duplicate("0", payload_size - String.length(index))
+          :ok = Measurer.start_measuring(System.monotonic_time(:microsecond), index)
+
+          :ok =
+            Rclex.publish(
+              struct(StdMsgs.Msg.String, %{data: payload}),
+              ping_topic,
+              state.node_name
+            )
+        end)
+        |> Enum.to_list()
+    end
+
+    {:reply, :ok, state}
   end
 end

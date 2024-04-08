@@ -73,13 +73,8 @@ defmodule PingPongMeasurerRclex.Measurer do
       {:noreply, %State{state | current_measurement: current_measurement}}
     else
       Logger.debug("#{inspect(current_measurement)}")
-
-      {:noreply,
-       %State{
-         state
-         | current_measurement: nil,
-           measurements: [current_measurement | state.measurements]
-       }}
+      measurements = [current_measurement | state.measurements]
+      {:noreply, %State{state | current_measurement: nil, measurements: measurements}}
     end
   end
 end

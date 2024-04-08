@@ -23,13 +23,13 @@ defmodule PingPongMeasurerRclex.Pong do
     for {node_name, index} <- Enum.with_index(node_names) do
       ping_topic =
         case ping_pub do
-          :single -> "/ping"
+          :single -> "/ping000"
           :multiple -> "/ping" <> String.pad_leading("#{index}", 3, "0")
         end
 
       pong_topic =
         case ping_sub do
-          :single -> "/pong"
+          :single -> "/pong000"
           :multiple -> "/pong" <> String.pad_leading("#{index}", 3, "0")
         end
 

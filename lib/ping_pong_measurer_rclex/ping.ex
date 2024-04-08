@@ -3,6 +3,7 @@ defmodule PingPongMeasurerRclex.Ping do
 
   require Logger
 
+  alias PingPongMeasurerRclex.Measurer
   alias Rclex.Pkgs.StdMsgs
 
   def start_link(args) do
@@ -27,7 +28,7 @@ defmodule PingPongMeasurerRclex.Ping do
 
     case pub do
       :single ->
-        ping_topic = "/ping"
+        ping_topic = "/ping000"
         :ok = Rclex.start_publisher(StdMsgs.Msg.String, ping_topic, node_name)
 
       :multiple ->
@@ -37,11 +38,16 @@ defmodule PingPongMeasurerRclex.Ping do
         end
     end
 
-    callback = fn message -> Logger.debug("ping recv: #{inspect(message)}") end
+    callback = fn message ->
+      # ここで計測終了
+      time = System.monotonic_time(:microsecond)
+      Measurer.stop_measuring(time, _index = String.slice(message.data, 0, 3))
+      Logger.debug("ping recv: #{inspect(message)}")
+    end
 
     case sub do
       :single ->
-        pong_topic = "/pong"
+        pong_topic = "/pong000"
         :ok = Rclex.start_subscription(callback, StdMsgs.Msg.String, pong_topic, node_name)
 
       :multiple ->

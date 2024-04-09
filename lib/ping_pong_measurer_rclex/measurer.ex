@@ -66,7 +66,7 @@ defmodule PingPongMeasurerRclex.Measurer do
     index = String.to_integer(index)
 
     current_measurement =
-      update_in(current_measurement.send_times, &List.replace_at(&1, index, time))
+      update_in(current_measurement.send_times, &List.update_at(&1, index, fn nil -> time end))
 
     {:noreply, %State{state | current_measurement: current_measurement}}
   end
@@ -78,7 +78,7 @@ defmodule PingPongMeasurerRclex.Measurer do
     index = String.to_integer(index)
 
     current_measurement =
-      update_in(current_measurement.recv_times, &List.replace_at(&1, index, time))
+      update_in(current_measurement.recv_times, &List.update_at(&1, index, fn nil -> time end))
 
     if Enum.any?(current_measurement.recv_times, &is_nil/1) do
       {:noreply, %State{state | current_measurement: current_measurement}}

@@ -98,12 +98,16 @@ defmodule PingPongMeasurerRclex.Measurer do
       Enum.with_index(h.recv_times)
       |> Enum.map(fn {_, i} -> "rt_#{String.pad_leading("#{i}", 3, "0")}[us]" end)
 
-    send_times_header ++ recv_times_header
+    took_times_header =
+      Enum.with_index(h.recv_times)
+      |> Enum.map(fn {_, i} -> "tt_#{String.pad_leading("#{i}", 3, "0")}[us]" end)
+
+    send_times_header ++ recv_times_header ++ took_times_header
   end
 
   defp body(measurements) do
     Enum.reduce(measurements, [], fn m, rows ->
-      row = m.send_times ++ m.recv_times
+      row = m.send_times ++ m.recv_times ++ took_times(m.send_times, m.recv_times)
       [row | rows]
     end)
   end
@@ -113,5 +117,10 @@ defmodule PingPongMeasurerRclex.Measurer do
     |> NimbleCSV.RFC4180.dump_to_stream()
     |> Enum.join()
     |> then(&File.write(file_path, &1))
+  end
+
+  defp took_times(send_times, recv_times) do
+    Enum.zip(send_times, recv_times)
+    |> Enum.map(fn {send_time, recv_time} -> recv_time - send_time end)
   end
 end

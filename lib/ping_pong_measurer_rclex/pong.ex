@@ -8,6 +8,8 @@ defmodule PingPongMeasurerRclex.Pong do
   end
 
   def init(args) do
+    Process.flag(:trap_exit, true)
+
     node_count = Keyword.fetch!(args, :node_count)
     ping_pub = Keyword.fetch!(args, :ping_pub)
     ping_sub = Keyword.fetch!(args, :ping_sub)
@@ -44,6 +46,12 @@ defmodule PingPongMeasurerRclex.Pong do
       :ok = Rclex.start_publisher(StdMsgs.Msg.String, pong_topic, node_name)
     end
 
-    {:ok, %{node_count: node_count}}
+    {:ok, %{node_count: node_count, node_names: node_names}}
+  end
+
+  def terminate(:normal, state) do
+    for node_name <- state.node_names do
+      Rclex.stop_node(node_name)
+    end
   end
 end

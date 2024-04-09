@@ -7,6 +7,20 @@ defmodule PingPongMeasurerRclex do
   alias PingPongMeasurerRclex.Ping
   alias PingPongMeasurerRclex.Measurer
 
+  def start_processes(pong_node_count, ping_pub, ping_sub, payload_size) do
+    start_pong_processes(pong_node_count, ping_pub, ping_sub)
+    start_ping_processes(pong_node_count, ping_pub, ping_sub, payload_size)
+    start_measurer_process(pong_node_count, ping_pub, ping_sub)
+    Process.sleep(1000)
+    Ping.start_measuring()
+  end
+
+  def stop_processes() do
+    GenServer.stop(Measurer)
+    GenServer.stop(Ping)
+    GenServer.stop(Pong)
+  end
+
   @doc """
   ## Examples
       iex> start_pong_processes(10, :single, :single)

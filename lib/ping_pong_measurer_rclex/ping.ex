@@ -19,6 +19,8 @@ defmodule PingPongMeasurerRclex.Ping do
   end
 
   def init(args) do
+    Process.flag(:trap_exit, true)
+
     pong_node_count = Keyword.fetch!(args, :pong_node_count)
     pub = Keyword.fetch!(args, :pub)
     sub = Keyword.fetch!(args, :sub)
@@ -74,6 +76,10 @@ defmodule PingPongMeasurerRclex.Ping do
      }}
   end
 
+  def terminate(:normal, state) do
+    Rclex.stop_node(state.node_name)
+  end
+
   def handle_call(:start_measuring, _from, state) do
     start_measuring(state)
     {:reply, :ok, state}
@@ -97,6 +103,12 @@ defmodule PingPongMeasurerRclex.Ping do
         {:noreply, %{state | pong_received_count: 0, ping_sent_count: 0}}
       end
     end
+  end
+
+  def handle_info({:EXIT, _pid, :normal}, state) do
+    # NOTE: Process.flag(:trap_exit, true) すると Flow の EXIT のハンドリングが必要になる。
+    # TODO: Flow から EXIT が飛んでくる原理を理解すること
+    {:noreply, state}
   end
 
   defp start_measuring(state) do

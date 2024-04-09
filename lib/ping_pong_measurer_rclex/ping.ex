@@ -87,7 +87,7 @@ defmodule PingPongMeasurerRclex.Ping do
 
   def handle_info(:pong_received, state) do
     pong_received_count = state.pong_received_count + 1
-    Logger.info("#{pong_received_count}/#{state.pong_node_count}")
+    # Logger.info("#{pong_received_count}/#{state.pong_node_count}")
 
     if pong_received_count < state.pong_node_count do
       {:noreply, %{state | pong_received_count: pong_received_count}}

@@ -83,7 +83,7 @@ defmodule PingPongMeasurerRclex.Measurer do
     if Enum.any?(current_measurement.recv_times, &is_nil/1) do
       {:noreply, %State{state | current_measurement: current_measurement}}
     else
-      Logger.debug("#{inspect(current_measurement)}")
+      # Logger.debug("#{inspect(current_measurement)}")
       measurements = [current_measurement | state.measurements]
       {:noreply, %State{state | current_measurement: nil, measurements: measurements}}
     end

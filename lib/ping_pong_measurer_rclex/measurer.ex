@@ -25,11 +25,22 @@ defmodule PingPongMeasurerRclex.Measurer do
   end
 
   def init(args) do
+    Process.flag(:trap_exit, true)
+
     pong_node_count = Keyword.fetch!(args, :pong_node_count)
     pub = Keyword.fetch!(args, :pub)
     sub = Keyword.fetch!(args, :sub)
 
     {:ok, %State{pong_node_count: pong_node_count, pub: pub, sub: sub}}
+  end
+
+  def terminate(:normal, state) do
+    file_path =
+      "data/rclex_#{String.pad_leading("#{state.pong_node_count}", 3, "0")}_#{state.pub}_#{state.sub}.csv"
+
+    File.mkdir_p!(Path.dirname(file_path))
+
+    save(file_path, [header(state.measurements) | body(state.measurements)])
   end
 
   def handle_cast({:start_measuring, time, index}, state) do
@@ -76,5 +87,31 @@ defmodule PingPongMeasurerRclex.Measurer do
       measurements = [current_measurement | state.measurements]
       {:noreply, %State{state | current_measurement: nil, measurements: measurements}}
     end
+  end
+
+  defp header([h | _t] = _measurements) do
+    send_times_header =
+      Enum.with_index(h.send_times)
+      |> Enum.map(fn {_, i} -> "st_#{String.pad_leading("#{i}", 3, "0")}[us]" end)
+
+    recv_times_header =
+      Enum.with_index(h.recv_times)
+      |> Enum.map(fn {_, i} -> "rt_#{String.pad_leading("#{i}", 3, "0")}[us]" end)
+
+    send_times_header ++ recv_times_header
+  end
+
+  defp body(measurements) do
+    Enum.reduce(measurements, [], fn m, rows ->
+      row = m.send_times ++ m.recv_times
+      [row | rows]
+    end)
+  end
+
+  defp save(file_path, rows) do
+    rows
+    |> NimbleCSV.RFC4180.dump_to_stream()
+    |> Enum.join()
+    |> then(&File.write(file_path, &1))
   end
 end

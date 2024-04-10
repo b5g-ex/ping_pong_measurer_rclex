@@ -11,11 +11,17 @@ defmodule PingPongMeasurerRclex do
     start_pong_processes(pong_node_count, ping_pub, ping_sub)
     start_ping_processes(pong_node_count, ping_pub, ping_sub, payload_size)
     start_measurer_process(pong_node_count, ping_pub, ping_sub)
+
+    Process.sleep(1000)
+    OsInfoMeasurer.start("data", "rclex_#{pong_node_count}_#{ping_pub}_#{ping_sub}_", 100)
+
     Process.sleep(1000)
     Ping.start_measuring()
   end
 
   def stop_processes() do
+    OsInfoMeasurer.stop()
+
     GenServer.stop(Measurer)
     GenServer.stop(Ping)
     GenServer.stop(Pong)

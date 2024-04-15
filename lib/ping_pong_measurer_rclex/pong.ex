@@ -23,21 +23,26 @@ defmodule PingPongMeasurerRclex.Pong do
       end
 
     for {node_name, index} <- Enum.with_index(node_names) do
+      index = String.pad_leading("#{index}", 3, "0")
+
       ping_topic =
         case ping_pub do
           :single -> "/ping000"
-          :multiple -> "/ping" <> String.pad_leading("#{index}", 3, "0")
+          :multiple -> "/ping#{index}"
         end
 
       pong_topic =
         case ping_sub do
           :single -> "/pong000"
-          :multiple -> "/pong" <> String.pad_leading("#{index}", 3, "0")
+          :multiple -> "/pong#{index}"
         end
 
       :ok =
         Rclex.start_subscription(
-          &Rclex.publish(&1, pong_topic, node_name),
+          fn message ->
+            {"000", data} = String.split_at(message.data, 3)
+            Rclex.publish(%{message | data: index <> data}, pong_topic, node_name)
+          end,
           StdMsgs.Msg.String,
           ping_topic,
           node_name

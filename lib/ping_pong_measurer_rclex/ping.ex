@@ -53,7 +53,11 @@ defmodule PingPongMeasurerRclex.Ping do
     case sub do
       :single ->
         pong_topic = "/pong000"
-        :ok = Rclex.start_subscription(callback, StdMsgs.Msg.String, pong_topic, node_name)
+
+        :ok =
+          Rclex.start_subscription(callback, StdMsgs.Msg.String, pong_topic, node_name,
+            qos: %Rclex.QoS{depth: 100}
+          )
 
       :multiple ->
         for index <- 0..(pong_node_count - 1) do

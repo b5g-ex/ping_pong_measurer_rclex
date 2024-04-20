@@ -121,7 +121,7 @@ defmodule PingPongMeasurerRclex.Ping do
         ping_topic = "/ping000"
         # ここで計測開始
         index = String.slice(ping_topic, 5, 3)
-        payload = index <> String.duplicate("0", state.payload_size - String.length(index))
+        payload = String.duplicate("0", state.payload_size)
         if state.payload_size != byte_size(payload), do: raise(RuntimeError)
         :ok = Measurer.start_measuring(System.monotonic_time(:microsecond), index)
 
@@ -143,7 +143,7 @@ defmodule PingPongMeasurerRclex.Ping do
         |> Flow.map(fn ping_topic ->
           # ここで計測開始
           index = String.slice(ping_topic, 5, 3)
-          payload = index <> String.duplicate("0", state.payload_size - String.length(index))
+          payload = String.duplicate("0", state.payload_size)
           if state.payload_size != byte_size(payload), do: raise(RuntimeError)
           :ok = Measurer.start_measuring(System.monotonic_time(:microsecond), index)
 

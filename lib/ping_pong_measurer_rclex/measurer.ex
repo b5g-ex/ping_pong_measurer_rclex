@@ -119,8 +119,18 @@ defmodule PingPongMeasurerRclex.Measurer do
     |> then(&File.write(file_path, &1))
   end
 
-  defp took_times(send_times, recv_times) do
-    Enum.zip(send_times, recv_times)
+  def took_times(send_times, recv_times) do
+    send_times_count = Enum.count(send_times)
+
+    recv_times
+    |> Enum.with_index()
+    |> Enum.map(fn {recv_time, index} ->
+      if send_times_count == 1 do
+        {Enum.at(send_times, 0), recv_time}
+      else
+        {Enum.at(send_times, index), recv_time}
+      end
+    end)
     |> Enum.map(fn {send_time, recv_time} -> recv_time - send_time end)
   end
 end

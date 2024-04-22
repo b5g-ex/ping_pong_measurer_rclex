@@ -76,7 +76,8 @@ defmodule PingPongMeasurerRclex.Ping do
        node_name: node_name,
        pong_received_count: 0,
        ping_sent_count: 0,
-       payload_size: payload_size
+       payload_size: payload_size,
+       starter: nil
      }}
   end
 
@@ -84,9 +85,9 @@ defmodule PingPongMeasurerRclex.Ping do
     Rclex.stop_node(state.node_name)
   end
 
-  def handle_call(:start_measuring, _from, state) do
+  def handle_call(:start_measuring, _from = {pid, _tag}, state) do
     start_measuring(state)
-    {:reply, :ok, state}
+    {:reply, :ok, %{state | starter: pid}}
   end
 
   def handle_info(:pong_received, state) do
@@ -104,6 +105,7 @@ defmodule PingPongMeasurerRclex.Ping do
         {:noreply, %{state | pong_received_count: 0, ping_sent_count: ping_sent_count}}
       else
         Logger.info("THE END: #{ping_sent_count}")
+        send(state.starter, :end)
         {:noreply, %{state | pong_received_count: 0, ping_sent_count: 0}}
       end
     end

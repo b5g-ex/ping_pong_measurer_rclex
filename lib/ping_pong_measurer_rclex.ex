@@ -3,6 +3,8 @@ defmodule PingPongMeasurerRclex do
   Documentation for `PingPongMeasurerRclex`.
   """
 
+  require Logger
+
   alias PingPongMeasurerRclex.Pong
   alias PingPongMeasurerRclex.Ping
   alias PingPongMeasurerRclex.Measurer
@@ -30,6 +32,29 @@ defmodule PingPongMeasurerRclex do
     GenServer.stop(Pong)
   end
 
+  def start_ping_side_processes(pong_node_count, ping_pub, ping_sub, payload_size) do
+    start_ping_processes(pong_node_count, ping_pub, ping_sub, payload_size)
+    start_measurer_process(pong_node_count, ping_pub, ping_sub)
+
+    OsInfoMeasurer.start(
+      "data",
+      "rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_",
+      100
+    )
+
+    Process.sleep(3000)
+
+    Ping.start_measuring()
+
+    receive do
+      :end -> Logger.info("THE END")
+    end
+
+    GenServer.stop(Ping)
+    GenServer.stop(Measurer)
+    OsInfoMeasurer.stop()
+  end
+
   @doc """
   ## Examples
       iex> start_pong_processes(10, :single, :single)
@@ -39,6 +64,10 @@ defmodule PingPongMeasurerRclex do
   """
   def start_pong_processes(node_count, ping_pub, ping_sub) do
     Pong.start_link(node_count: node_count, ping_pub: ping_pub, ping_sub: ping_sub)
+  end
+
+  def stop_pong_processes() do
+    GenServer.stop(Pong)
   end
 
   @doc """

@@ -13,7 +13,12 @@ defmodule PingPongMeasurerRclex do
     start_measurer_process(pong_node_count, ping_pub, ping_sub)
 
     Process.sleep(1000)
-    OsInfoMeasurer.start("data", "rclex_#{pong_node_count}_#{ping_pub}_#{ping_sub}_", 100)
+
+    OsInfoMeasurer.start(
+      "data",
+      "rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_",
+      100
+    )
 
     Process.sleep(1000)
     Ping.start_measuring()

@@ -7,6 +7,6 @@
   "nimble_csv": {:hex, :nimble_csv, "1.2.0", "4e26385d260c61eba9d4412c71cea34421f296d5353f914afe3f2e71cce97722", [:mix], [], "hexpm", "d0628117fcc2148178b034044c55359b26966c6eaa8e2ce15777be3bbc91b12a"},
   "nimble_parsec": {:hex, :nimble_parsec, "1.4.0", "51f9b613ea62cfa97b25ccc2c1b4216e81df970acd8e16e8d1bdc58fef21370d", [:mix], [], "hexpm", "9c565862810fb383e9838c1dd2d7d2c437b3d13b267414ba6af33e50d2d1cf28"},
   "os_info_measurer": {:git, "https://github.com/b5g-ex/os_info_measurer.git", "ce2c5eb705c9ba96400ff182ab3f6a4fb4442dbb", []},
-  "rclex": {:hex, :rclex, "0.10.0", "0d6867fd05503aa65bc62e3e5eb9f3a83ea2b1c579da8e62890fdf96a083309d", [:make, :mix], [{:elixir_make, "~> 0.7", [hex: :elixir_make, repo: "hexpm", optional: false]}, {:nimble_parsec, "~> 1.0", [hex: :nimble_parsec, repo: "hexpm", optional: false]}], "hexpm", "eb5bc86246ed27ba951a28bcb05eb7eb9998fc4ea9cf1ed9f58e5045746740e3"},
+  "rclex": {:git, "https://github.com/rclex/rclex.git", "5c11e17e07afc12ca9787e122cb7246f06e01001", [branch: "pojiro/apply-dynamic-timeout_us"]},
   "rclex_gen_msgs": {:hex, :rclex_gen_msgs, "0.1.0", "265c9dc6a5e820e12a669d3c5eedcaf1a89d340f93b99ae6f5505a610850cc92", [:mix], [], "hexpm", "a6b190dcfb98d45452eeab4145250f9ea4ed65444bf4a146cbe5ed704ae625fb"},
 }

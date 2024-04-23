@@ -45,7 +45,7 @@ defmodule PingPongMeasurerRclex.Ping do
 
     callback = fn message ->
       # ここで計測終了
-      time = System.monotonic_time(:microsecond)
+      time = time(:microsecond)
       Measurer.stop_measuring(time, _index = String.slice(message.data, 0, 3))
       send(me, :pong_received)
     end
@@ -125,7 +125,7 @@ defmodule PingPongMeasurerRclex.Ping do
         index = String.slice(ping_topic, 5, 3)
         payload = String.duplicate("0", state.payload_size)
         if state.payload_size != byte_size(payload), do: raise(RuntimeError)
-        :ok = Measurer.start_measuring(System.monotonic_time(:microsecond), index)
+        :ok = Measurer.start_measuring(time(:microsecond), index)
 
         :ok =
           Rclex.publish(
@@ -147,7 +147,7 @@ defmodule PingPongMeasurerRclex.Ping do
           index = String.slice(ping_topic, 5, 3)
           payload = String.duplicate("0", state.payload_size)
           if state.payload_size != byte_size(payload), do: raise(RuntimeError)
-          :ok = Measurer.start_measuring(System.monotonic_time(:microsecond), index)
+          :ok = Measurer.start_measuring(time(:microsecond), index)
 
           :ok =
             Rclex.publish(
@@ -159,4 +159,6 @@ defmodule PingPongMeasurerRclex.Ping do
         |> Enum.to_list()
     end
   end
+
+  defdelegate time(unit), to: System, as: :os_time
 end

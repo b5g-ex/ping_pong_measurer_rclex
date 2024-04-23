@@ -39,7 +39,7 @@ defmodule PingPongMeasurerRclex do
     OsInfoMeasurer.start(
       "data",
       "rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_",
-      100
+      10
     )
 
     Process.sleep(3000)

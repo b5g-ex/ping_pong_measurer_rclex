@@ -24,7 +24,7 @@ defmodule PingPongMeasurerRclex do
     Ping.start_measuring()
 
     receive do
-      :end -> Logger.info("THE END")
+      :end -> :do_nothing
     end
 
     GenServer.stop(Pong)
@@ -33,6 +33,7 @@ defmodule PingPongMeasurerRclex do
 
     Process.sleep(1000)
     OsInfoMeasurer.stop()
+    Logger.info("THE END")
   end
 
   def start_ping_side_processes(pong_node_count, ping_pub, ping_sub, payload_size) do
@@ -51,7 +52,7 @@ defmodule PingPongMeasurerRclex do
     Ping.start_measuring()
 
     receive do
-      :end -> Logger.info("THE END")
+      :end -> :do_nothing
     end
 
     GenServer.stop(Ping)
@@ -60,6 +61,7 @@ defmodule PingPongMeasurerRclex do
     # OS 情報を 1s 余分に計測
     Process.sleep(1000)
     OsInfoMeasurer.stop()
+    Logger.info("THE END")
   end
 
   @doc """

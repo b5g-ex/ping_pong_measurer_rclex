@@ -36,7 +36,11 @@ defmodule PingPongMeasurerRclex.Measurer do
 
   def terminate(:normal, state) do
     file_path =
-      "data/rclex_#{String.pad_leading("#{state.pong_node_count}", 3, "0")}_#{state.pub}_#{state.sub}.csv"
+      Path.join([
+        "data",
+        "rclex_#{String.pad_leading("#{state.pong_node_count}", 3, "0")}_#{state.pub}_#{state.sub}",
+        "rclex_#{String.pad_leading("#{state.pong_node_count}", 3, "0")}_#{state.pub}_#{state.sub}.csv"
+      ])
 
     File.mkdir_p!(Path.dirname(file_path))
 

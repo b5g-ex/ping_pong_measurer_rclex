@@ -9,27 +9,30 @@ defmodule PingPongMeasurerRclex do
   alias PingPongMeasurerRclex.Ping
   alias PingPongMeasurerRclex.Measurer
 
-  def start_processes(pong_node_count, ping_pub, ping_sub, payload_size) do
+  def local_test(pong_node_count, ping_pub, ping_sub, payload_size) do
     start_pong_processes(pong_node_count, ping_pub, ping_sub)
     start_ping_processes(pong_node_count, ping_pub, ping_sub, payload_size)
     start_measurer_process(pong_node_count, ping_pub, ping_sub)
 
     OsInfoMeasurer.start(
-      "data",
+      "data/rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}",
       "rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_",
       100
     )
 
-    Process.sleep(3000)
+    Process.sleep(1000)
     Ping.start_measuring()
-  end
 
-  def stop_processes() do
-    OsInfoMeasurer.stop()
+    receive do
+      :end -> Logger.info("THE END")
+    end
 
-    GenServer.stop(Measurer)
-    GenServer.stop(Ping)
     GenServer.stop(Pong)
+    GenServer.stop(Ping)
+    GenServer.stop(Measurer)
+
+    Process.sleep(1000)
+    OsInfoMeasurer.stop()
   end
 
   def start_ping_side_processes(pong_node_count, ping_pub, ping_sub, payload_size) do
@@ -38,7 +41,7 @@ defmodule PingPongMeasurerRclex do
 
     # OS 情報を 1s 余分に計測
     OsInfoMeasurer.start(
-      "data",
+      "data/rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}",
       "rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_",
       10
     )

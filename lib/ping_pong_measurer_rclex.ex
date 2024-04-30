@@ -12,11 +12,11 @@ defmodule PingPongMeasurerRclex do
   def local_test(pong_node_count, ping_pub, ping_sub, payload_size) do
     start_pong_processes(pong_node_count, ping_pub, ping_sub)
     start_ping_processes(pong_node_count, ping_pub, ping_sub, payload_size, 1000)
-    start_measurer_process(pong_node_count, ping_pub, ping_sub)
+    start_measurer_process(pong_node_count, ping_pub, ping_sub, payload_size)
 
     OsInfoMeasurer.start(
-      "data/rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}",
-      "rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_",
+      "data/rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_#{payload_size}",
+      "rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_#{payload_size}_",
       100
     )
 
@@ -51,12 +51,12 @@ defmodule PingPongMeasurerRclex do
 
     # RTT 計測時に OS 情報計測は不要、 OS 情報計測時に RTT 計測は不要
     if disable_os_info_measuring do
-      start_measurer_process(pong_node_count, ping_pub, ping_sub)
+      start_measurer_process(pong_node_count, ping_pub, ping_sub, payload_size)
     else
       # OS 情報を 1s 余分に計測
       OsInfoMeasurer.start(
-        "data/rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}",
-        "rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_",
+        "data/rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_#{payload_size}",
+        "rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_#{payload_size}_",
         100
       )
 
@@ -115,7 +115,12 @@ defmodule PingPongMeasurerRclex do
     )
   end
 
-  def start_measurer_process(pong_node_count, pub, sub) do
-    Measurer.start_link(pong_node_count: pong_node_count, pub: pub, sub: sub)
+  def start_measurer_process(pong_node_count, pub, sub, payload_size) do
+    Measurer.start_link(
+      pong_node_count: pong_node_count,
+      pub: pub,
+      sub: sub,
+      payload_size: payload_size
+    )
   end
 end

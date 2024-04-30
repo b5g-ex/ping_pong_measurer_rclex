@@ -4,7 +4,12 @@ defmodule PingPongMeasurerRclex.Measurer do
   require Logger
 
   defmodule State do
-    defstruct pong_node_count: 0, pub: nil, sub: nil, current_measurement: nil, measurements: []
+    defstruct pong_node_count: 0,
+              pub: nil,
+              sub: nil,
+              current_measurement: nil,
+              measurements: [],
+              payload_size: 4
   end
 
   defmodule Measurement do
@@ -30,16 +35,23 @@ defmodule PingPongMeasurerRclex.Measurer do
     pong_node_count = Keyword.fetch!(args, :pong_node_count)
     pub = Keyword.fetch!(args, :pub)
     sub = Keyword.fetch!(args, :sub)
+    payload_size = Keyword.fetch!(args, :payload_size)
 
-    {:ok, %State{pong_node_count: pong_node_count, pub: pub, sub: sub}}
+    {:ok,
+     %State{
+       pong_node_count: pong_node_count,
+       pub: pub,
+       sub: sub,
+       payload_size: payload_size
+     }}
   end
 
   def terminate(:normal, state) do
     file_path =
       Path.join([
         "data",
-        "rclex_#{String.pad_leading("#{state.pong_node_count}", 3, "0")}_#{state.pub}_#{state.sub}",
-        "rclex_#{String.pad_leading("#{state.pong_node_count}", 3, "0")}_#{state.pub}_#{state.sub}.csv"
+        "rclex_#{String.pad_leading("#{state.pong_node_count}", 3, "0")}_#{state.pub}_#{state.sub}_#{state.payload_size}",
+        "rclex_#{String.pad_leading("#{state.pong_node_count}", 3, "0")}_#{state.pub}_#{state.sub}_#{state.payload_size}.csv"
       ])
 
     File.mkdir_p!(Path.dirname(file_path))

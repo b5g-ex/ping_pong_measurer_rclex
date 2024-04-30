@@ -25,6 +25,7 @@ defmodule PingPongMeasurerRclex.Ping do
     pub = Keyword.fetch!(args, :pub)
     sub = Keyword.fetch!(args, :sub)
     payload_size = Keyword.fetch!(args, :payload_size)
+    measurement_times = Keyword.fetch!(args, :measurement_times)
 
     node_name = "ping"
     :ok = Rclex.start_node(node_name)
@@ -77,6 +78,7 @@ defmodule PingPongMeasurerRclex.Ping do
        pong_received_count: 0,
        ping_sent_count: 0,
        payload_size: payload_size,
+       measurement_times: measurement_times,
        starter: nil
      }}
   end
@@ -99,7 +101,7 @@ defmodule PingPongMeasurerRclex.Ping do
     else
       ping_sent_count = state.ping_sent_count + 1
 
-      if ping_sent_count < 100 do
+      if ping_sent_count < state.measurement_times do
         Logger.info("GO NEXT: #{ping_sent_count}")
         start_measuring(state)
         {:noreply, %{state | pong_received_count: 0, ping_sent_count: ping_sent_count}}

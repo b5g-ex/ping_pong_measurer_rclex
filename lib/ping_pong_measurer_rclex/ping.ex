@@ -46,8 +46,8 @@ defmodule PingPongMeasurerRclex.Ping do
 
     callback = fn message ->
       # ここで計測終了
-      time = time(:microsecond)
-      Measurer.stop_measuring(time, _index = String.slice(message.data, 0, 3))
+      index = String.slice(message.data, 0, 3)
+      Measurer.stop_measuring(time(:microsecond), index)
       send(me, :pong_received)
     end
 

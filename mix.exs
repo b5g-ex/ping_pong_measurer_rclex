@@ -21,7 +21,7 @@ defmodule PingPongMeasurerRclex.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:rclex, git: "https://github.com/rclex/rclex.git", branch: "pojiro/trial"},
+      {:rclex, git: "https://github.com/rclex/rclex.git", branch: "pojiro/fixes"},
       {:nimble_csv, "~> 1.1"},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
       {:flow, "~> 1.0"},

@@ -119,6 +119,13 @@ defmodule PingPongMeasurerRclex.Ping do
     {:noreply, state}
   end
 
+  def handle_info(info = {:EXIT, _pid, :shutdown}, state) do
+    # NOTE: Process.flag(:trap_exit, true) すると Flow の EXIT のハンドリングが必要になる。
+    # TODO: Flow から EXIT が飛んでくる原理を理解すること
+    Logger.info("#{inspect(info)}")
+    {:noreply, state}
+  end
+
   defp start_measuring(state) do
     case state.pub do
       :single ->

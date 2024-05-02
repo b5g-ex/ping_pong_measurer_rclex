@@ -46,8 +46,9 @@ defmodule PingPongMeasurerRclex.Ping do
 
     callback = fn message ->
       # ここで計測終了
-      index = String.slice(message.data, 0, 3)
-      Measurer.stop_measuring(time(:microsecond), index)
+      time = time(:microsecond)
+      index = binary_part(message.data, 0, 3)
+      Measurer.stop_measuring(time, index)
       send(me, :pong_received)
     end
 
@@ -131,7 +132,7 @@ defmodule PingPongMeasurerRclex.Ping do
       :single ->
         ping_topic = "/ping000"
         # ここで計測開始
-        index = String.slice(ping_topic, 5, 3)
+        index = binary_part(ping_topic, 5, 3)
         payload = String.duplicate("0", state.payload_size)
         if state.payload_size != byte_size(payload), do: raise(RuntimeError)
         :ok = Measurer.start_measuring(time(:microsecond), index)
@@ -153,7 +154,7 @@ defmodule PingPongMeasurerRclex.Ping do
         |> Flow.from_enumerable(max_demand: 1, stages: state.pong_node_count)
         |> Flow.map(fn ping_topic ->
           # ここで計測開始
-          index = String.slice(ping_topic, 5, 3)
+          index = binary_part(ping_topic, 5, 3)
           payload = String.duplicate("0", state.payload_size)
           if state.payload_size != byte_size(payload), do: raise(RuntimeError)
           :ok = Measurer.start_measuring(time(:microsecond), index)

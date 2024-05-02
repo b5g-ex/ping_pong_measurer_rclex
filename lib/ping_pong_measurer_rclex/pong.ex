@@ -40,8 +40,9 @@ defmodule PingPongMeasurerRclex.Pong do
       :ok =
         Rclex.start_subscription(
           fn message ->
-            {"000", data} = String.split_at(message.data, 3)
-            Rclex.publish(%{message | data: index <> data}, pong_topic, node_name)
+            binary = message.data
+            binary = binary_part(IO.iodata_to_binary([index, binary]), 0, byte_size(binary))
+            Rclex.publish(%{message | data: binary}, pong_topic, node_name)
           end,
           StdMsgs.Msg.String,
           ping_topic,

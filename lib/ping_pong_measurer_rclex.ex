@@ -9,9 +9,9 @@ defmodule PingPongMeasurerRclex do
   alias PingPongMeasurerRclex.Ping
   alias PingPongMeasurerRclex.Measurer
 
-  def local_test(pong_node_count, ping_pub, ping_sub, payload_size) do
+  def local_test(pong_node_count, ping_pub, ping_sub, payload_size, measurement_times \\ 100) do
     start_pong_processes(pong_node_count, ping_pub, ping_sub)
-    start_ping_processes(pong_node_count, ping_pub, ping_sub, payload_size, 1000)
+    start_ping_processes(pong_node_count, ping_pub, ping_sub, payload_size, measurement_times)
     start_measurer_process(pong_node_count, ping_pub, ping_sub, payload_size)
 
     OsInfoMeasurer.start(

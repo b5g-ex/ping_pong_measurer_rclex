@@ -10,14 +10,6 @@ defmodule PingPongMeasurerRclex.Ping do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
-  @doc """
-  ## Examples
-      iex> start_measuring()
-  """
-  def start_measuring() do
-    GenServer.call(__MODULE__, :start_measuring)
-  end
-
   def init(args) do
     Process.flag(:trap_exit, true)
 
@@ -27,7 +19,7 @@ defmodule PingPongMeasurerRclex.Ping do
     payload_size = Keyword.fetch!(args, :payload_size)
     measurement_times = Keyword.fetch!(args, :measurement_times)
 
-    node_name = "ping"
+    node_name = "ping000"
     :ok = Rclex.start_node(node_name)
 
     case pub do
@@ -70,6 +62,16 @@ defmodule PingPongMeasurerRclex.Ping do
         end
     end
 
+    :ok = Rclex.start_publisher(StdMsgs.Msg.String, "/from_ping_to_starter", node_name)
+
+    :ok =
+      Rclex.start_subscription(
+        fn _message = %{data: "start"} -> send(me, :ping) end,
+        StdMsgs.Msg.String,
+        "/from_starter",
+        node_name
+      )
+
     {:ok,
      %{
        pong_node_count: pong_node_count,
@@ -77,10 +79,9 @@ defmodule PingPongMeasurerRclex.Ping do
        sub: sub,
        node_name: node_name,
        pong_received_count: 0,
-       ping_sent_count: 0,
+       measurement_count: 0,
        payload_size: payload_size,
-       measurement_times: measurement_times,
-       starter: nil
+       measurement_times: measurement_times
      }}
   end
 
@@ -88,9 +89,9 @@ defmodule PingPongMeasurerRclex.Ping do
     Rclex.stop_node(state.node_name)
   end
 
-  def handle_call(:start_measuring, _from = {pid, _tag}, state) do
-    start_measuring(state)
-    {:reply, :ok, %{state | starter: pid}}
+  def handle_info(:ping, state) do
+    ping(state)
+    {:noreply, state}
   end
 
   def handle_info(:pong_received, state) do
@@ -100,16 +101,28 @@ defmodule PingPongMeasurerRclex.Ping do
     if pong_received_count < state.pong_node_count do
       {:noreply, %{state | pong_received_count: pong_received_count}}
     else
-      ping_sent_count = state.ping_sent_count + 1
+      measurement_count = state.measurement_count + 1
 
-      if ping_sent_count < state.measurement_times do
-        Logger.info("GO NEXT: #{ping_sent_count}")
-        start_measuring(state)
-        {:noreply, %{state | pong_received_count: 0, ping_sent_count: ping_sent_count}}
+      if measurement_count < state.measurement_times do
+        Logger.info("GO NEXT: #{measurement_count}/#{state.measurement_times}")
+
+        Rclex.publish(
+          struct(StdMsgs.Msg.String, %{data: "a measurement completed"}),
+          "/from_ping_to_starter",
+          state.node_name
+        )
+
+        {:noreply, %{state | pong_received_count: 0, measurement_count: measurement_count}}
       else
-        Logger.info("THE END: #{ping_sent_count}")
-        send(state.starter, :end)
-        {:noreply, %{state | pong_received_count: 0, ping_sent_count: 0}}
+        Logger.info("THE END: #{measurement_count}/#{state.measurement_times}")
+
+        Rclex.publish(
+          struct(StdMsgs.Msg.String, %{data: "measurements completed"}),
+          "/from_ping_to_starter",
+          state.node_name
+        )
+
+        {:noreply, %{state | pong_received_count: 0, measurement_count: 0}}
       end
     end
   end
@@ -127,7 +140,7 @@ defmodule PingPongMeasurerRclex.Ping do
     {:noreply, state}
   end
 
-  defp start_measuring(state) do
+  defp ping(state) do
     case state.pub do
       :single ->
         ping_topic = "/ping000"

@@ -42,7 +42,7 @@ defmodule PingPongMeasurerRclex do
         ping_sub,
         payload_size,
         measurement_times \\ 100,
-        disable_os_info_measuring \\ true
+        enable_os_info_measuring \\ false
       ) do
     start_ping_processes(pong_node_count, ping_pub, ping_sub, payload_size, measurement_times)
     # NOTE: Publisher が初発を送るために待つ必要がある。
@@ -50,9 +50,7 @@ defmodule PingPongMeasurerRclex do
     Process.sleep(100)
 
     # RTT 計測時に OS 情報計測は不要、 OS 情報計測時に RTT 計測は不要
-    if disable_os_info_measuring do
-      start_measurer_process(pong_node_count, ping_pub, ping_sub, payload_size)
-    else
+    if enable_os_info_measuring do
       # OS 情報を 1s 余分に計測
       OsInfoMeasurer.start(
         "data/rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_#{payload_size}",
@@ -61,6 +59,8 @@ defmodule PingPongMeasurerRclex do
       )
 
       Process.sleep(1000)
+    else
+      start_measurer_process(pong_node_count, ping_pub, ping_sub, payload_size)
     end
 
     :ok = Ping.start_measuring()
@@ -71,13 +71,13 @@ defmodule PingPongMeasurerRclex do
 
     GenServer.stop(Ping)
 
-    if disable_os_info_measuring do
-      GenServer.stop(Measurer)
-    else
+    if enable_os_info_measuring do
       # OS 情報を 1s 余分に計測
       Process.sleep(1000)
 
       OsInfoMeasurer.stop()
+    else
+      GenServer.stop(Measurer)
     end
 
     Logger.info("THE END")

@@ -23,7 +23,7 @@ defmodule PingPongMeasurerRclex do
     )
 
     Process.sleep(1000)
-    Starter.start_measurement()
+    :ok = Starter.start_measurement()
 
     receive do
       :end -> :do_nothing
@@ -47,6 +47,7 @@ defmodule PingPongMeasurerRclex do
         enable_os_info_measuring \\ false
       ) do
     start_ping_processes(pong_node_count, ping_pub, ping_sub, payload_size, measurement_times)
+    start_starter_process()
     # NOTE: Publisher が初発を送るために待つ必要がある。
     #       原因不明、 https://github.com/rclex/rclex/issues/212 の可能性がある。
     Process.sleep(100)
@@ -65,7 +66,7 @@ defmodule PingPongMeasurerRclex do
       start_measurer_process(pong_node_count, ping_pub, ping_sub, payload_size)
     end
 
-    :ok = Ping.start_measuring()
+    :ok = Starter.start_measurement()
 
     receive do
       :end -> :do_nothing

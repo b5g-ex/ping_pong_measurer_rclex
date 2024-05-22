@@ -10,6 +10,11 @@ defmodule PingPongMeasurerRclex do
   alias PingPongMeasurerRclex.Measurer
   alias PingPongMeasurerRclex.Starter
 
+  @doc """
+  This function is for development.
+
+  You can test ping pong measuring on one Erlang VM.
+  """
   def local_test(pong_node_count, ping_pub, ping_sub, payload_size, measurement_times \\ 100) do
     start_pong_processes(pong_node_count, ping_pub, ping_sub)
     start_ping_processes(pong_node_count, ping_pub, ping_sub, payload_size, measurement_times)
@@ -38,6 +43,14 @@ defmodule PingPongMeasurerRclex do
     Logger.info("THE END")
   end
 
+  @doc """
+  This function is for ping pong measuring.
+
+  NOTE: that RTT and OS information measurements are not done at the same time.
+
+  - `enable_os_info_measuring` is false for RTT measurement
+  - `enable_os_info_measuring` is true  for OS  measurement
+  """
   def start_ping_side_processes(
         pong_node_count,
         ping_pub,
@@ -87,14 +100,18 @@ defmodule PingPongMeasurerRclex do
   end
 
   @doc """
+  This function is for ping pong measuring.
+
+  NOTE: You can stop pong processes by `stop_pong_processes/0`.
+
   ## Examples
       iex> start_pong_processes(10, :single, :single)
       iex> start_pong_processes(10, :multiple, :single)
       iex> start_pong_processes(10, :single, :multiple)
       iex> start_pong_processes(10, :multiple, :multiple)
   """
-  def start_pong_processes(node_count, ping_pub, ping_sub) do
-    Pong.start_link(node_count: node_count, ping_pub: ping_pub, ping_sub: ping_sub)
+  def start_pong_processes(pong_node_count, ping_pub, ping_sub) do
+    Pong.start_link(node_count: pong_node_count, ping_pub: ping_pub, ping_sub: ping_sub)
   end
 
   def stop_pong_processes() do

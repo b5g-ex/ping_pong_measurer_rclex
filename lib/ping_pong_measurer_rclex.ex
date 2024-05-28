@@ -5,99 +5,146 @@ defmodule PingPongMeasurerRclex do
 
   require Logger
 
-  alias PingPongMeasurerRclex.Ping2, as: Ping
-  alias PingPongMeasurerRclex.Pong2, as: Pong
+  alias PingPongMeasurerRclex.Pong
+  alias PingPongMeasurerRclex.Ping
+  alias PingPongMeasurerRclex.Measurer
+  alias PingPongMeasurerRclex.Starter
 
-  alias PingPongMeasurerRclex.OsInfo.CpuMeasurer
-  alias PingPongMeasurerRclex.OsInfo.MemoryMeasurer
-  alias PingPongMeasurerRclex.Ping2.Measurer, as: PingMeasurer
+  @doc """
+  This function is for development.
 
-  def start_ping_processes(context, node_counts, data_directory_path) do
-    Ping.start_link({context, node_counts, data_directory_path})
-    Ping.start_subscribing()
+  You can test ping pong measuring on one Erlang VM.
+  """
+  def local_test(pong_node_count, ping_pub, ping_sub, payload_size, measurement_times \\ 100) do
+    start_pong_processes(pong_node_count, ping_pub, ping_sub)
+    start_ping_processes(pong_node_count, ping_pub, ping_sub, payload_size, measurement_times)
+    start_measurer_process(pong_node_count, ping_pub, ping_sub, payload_size)
+    start_starter_process()
 
-    Logger.info("start_ping_processes done.")
+    OsInfoMeasurer.start(
+      "data/rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_#{payload_size}",
+      "rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_#{payload_size}_",
+      100
+    )
+
+    Process.sleep(1000)
+    :ok = Starter.start_measurement()
+
+    receive do
+      :end -> :do_nothing
+    end
+
+    GenServer.stop(Pong)
+    GenServer.stop(Ping)
+    GenServer.stop(Measurer)
+
+    Process.sleep(1000)
+    OsInfoMeasurer.stop()
+    Logger.info("THE END")
   end
 
-  def stop_ping_processes() do
+  @doc """
+  This function is for ping pong measuring.
+
+  NOTE: that RTT and OS information measurements are not done at the same time.
+
+  - `enable_os_info_measuring` is false for RTT measurement
+  - `enable_os_info_measuring` is true  for OS  measurement
+  """
+  def start_ping_side_processes(
+        pong_node_count,
+        ping_pub,
+        ping_sub,
+        payload_size,
+        measurement_times \\ 100,
+        enable_os_info_measuring \\ false
+      ) do
+    start_ping_processes(pong_node_count, ping_pub, ping_sub, payload_size, measurement_times)
+    start_starter_process()
+    # NOTE: Publisher が初発を送るために待つ必要がある。
+    #       原因不明、 https://github.com/rclex/rclex/issues/212 の可能性がある。
+    Process.sleep(100)
+
+    # RTT 計測時に OS 情報計測は不要、 OS 情報計測時に RTT 計測は不要
+    if enable_os_info_measuring do
+      # OS 情報を 1s 余分に計測
+      OsInfoMeasurer.start(
+        "data/rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_#{payload_size}",
+        "rclex_#{String.pad_leading("#{pong_node_count}", 3, "0")}_#{ping_pub}_#{ping_sub}_#{payload_size}_",
+        100
+      )
+
+      Process.sleep(1000)
+    else
+      start_measurer_process(pong_node_count, ping_pub, ping_sub, payload_size)
+    end
+
+    :ok = Starter.start_measurement()
+
+    receive do
+      :end -> :do_nothing
+    end
+
     GenServer.stop(Ping)
 
-    Logger.info("stop_ping_processes done.")
+    if enable_os_info_measuring do
+      # OS 情報を 1s 余分に計測
+      Process.sleep(1000)
+
+      OsInfoMeasurer.stop()
+    else
+      GenServer.stop(Measurer)
+    end
+
+    Logger.info("THE END")
   end
 
-  def start_pong_processes(context, node_counts) do
-    Pong.start_link({context, node_counts})
+  @doc """
+  This function is for ping pong measuring.
+
+  NOTE: You can stop pong processes by `stop_pong_processes/0`.
+
+  ## Examples
+      iex> start_pong_processes(10, :single, :single)
+      iex> start_pong_processes(10, :multiple, :single)
+      iex> start_pong_processes(10, :single, :multiple)
+      iex> start_pong_processes(10, :multiple, :multiple)
+  """
+  def start_pong_processes(pong_node_count, ping_pub, ping_sub) do
+    Pong.start_link(node_count: pong_node_count, ping_pub: ping_pub, ping_sub: ping_sub)
   end
 
   def stop_pong_processes() do
     GenServer.stop(Pong)
   end
 
-  def start_ping_pong(payload) do
-    Ping.get_publishers()
-    |> Ping.publish(payload)
-  end
-
-  def wait_until_all_nodes_finished(node_counts, finished_node_counts \\ 0) do
-    receive do
-      :finished ->
-        finished_node_counts = finished_node_counts + 1
-
-        if(node_counts > finished_node_counts) do
-          wait_until_all_nodes_finished(node_counts, finished_node_counts)
-        end
-    end
-  end
-
-  def start_os_info_measurement(data_directory_path, measurement_cycle_ms \\ 100)
-      when is_binary(data_directory_path) and is_integer(measurement_cycle_ms) do
-    ds_name = os_info_supervisor_name()
-    PingPongMeasurerRclex.DynamicSupervisor.start_link(ds_name)
-
-    DynamicSupervisor.start_child(
-      ds_name,
-      {CpuMeasurer, {data_directory_path, measurement_cycle_ms}}
+  @doc """
+  ## Examples
+      iex> start_ping_processes(10, :single, :single, 8)
+      iex> start_ping_processes(10, :multiple, :single, 8)
+      iex> start_ping_processes(10, :single, :multiple, 8)
+      iex> start_ping_processes(10, :multiple, :multiple, 8)
+  """
+  def start_ping_processes(pong_node_count, pub, sub, payload_size, measurement_times \\ 100) do
+    Ping.start_link(
+      pong_node_count: pong_node_count,
+      pub: pub,
+      sub: sub,
+      payload_size: payload_size,
+      measurement_times: measurement_times
     )
+  end
 
-    DynamicSupervisor.start_child(
-      ds_name,
-      {MemoryMeasurer, {data_directory_path, measurement_cycle_ms}}
+  def start_measurer_process(pong_node_count, pub, sub, payload_size) do
+    Measurer.start_link(
+      pong_node_count: pong_node_count,
+      pub: pub,
+      sub: sub,
+      payload_size: payload_size
     )
-
-    Logger.info("start_os_info_measurement done.")
   end
 
-  def stop_os_info_measurement() do
-    DynamicSupervisor.stop(os_info_supervisor_name())
-
-    Logger.info("stop_os_info_measurement done.")
-  end
-
-  def start_ping_measurer(data_directory_path) when is_binary(data_directory_path) do
-    ds_name = ping_measurer_supervisor_name()
-    PingPongMeasurerRclex.DynamicSupervisor.start_link(ds_name)
-
-    for node_id <- Ping.get_node_id_list() do
-      DynamicSupervisor.start_child(
-        ds_name,
-        {PingMeasurer, %{node_id: node_id, data_directory_path: data_directory_path}}
-      )
-    end
-
-    Logger.info("start_ping_measurer done.")
-  end
-
-  def stop_ping_measurer() do
-    DynamicSupervisor.stop(ping_measurer_supervisor_name())
-
-    Logger.info("stop_ping_measurer done.")
-  end
-
-  defp os_info_supervisor_name() do
-    Module.concat(__MODULE__, OsInfo.DynamicSupervisor)
-  end
-
-  defp ping_measurer_supervisor_name() do
-    Module.concat(__MODULE__, Ping.Measurer.DynamicSupervisor)
+  def start_starter_process() do
+    Starter.start_link([])
   end
 end

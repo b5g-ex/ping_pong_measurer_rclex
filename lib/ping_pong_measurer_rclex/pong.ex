@@ -1,33 +1,63 @@
 defmodule PingPongMeasurerRclex.Pong do
   use GenServer
 
-  require Logger
+  alias Rclex.Pkgs.StdMsgs
 
-  alias PingPongMeasurerRclex.Utils
-
-  def start_link({_, node_index} = args_tuple) do
-    GenServer.start_link(__MODULE__, args_tuple,
-      name: Utils.get_process_name(__MODULE__, node_index)
-    )
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
-  def init({context, node_index}) when is_integer(node_index) do
-    {:ok, node_id} =
-      Rclex.ResourceServer.create_node(context, 'pong_node' ++ to_charlist(node_index))
+  def init(args) do
+    Process.flag(:trap_exit, true)
 
-    ping_topic = 'ping' ++ to_charlist(node_index)
-    pong_topic = 'pong' ++ to_charlist(node_index)
+    node_count = Keyword.fetch!(args, :node_count)
+    ping_pub = Keyword.fetch!(args, :ping_pub)
+    ping_sub = Keyword.fetch!(args, :ping_sub)
 
-    {:ok, subscriber} = Rclex.Node.create_subscriber(node_id, 'StdMsgs.Msg.String', ping_topic)
-    {:ok, publisher} = Rclex.Node.create_publisher(node_id, 'StdMsgs.Msg.String', pong_topic)
+    node_names =
+      for index <- 0..(node_count - 1) do
+        node_name = "pong" <> String.pad_leading("#{index}", 3, "0")
 
-    Rclex.Subscriber.start_subscribing([subscriber], context, fn msg ->
-      recv_msg = Rclex.Msg.read(msg, 'StdMsgs.Msg.String')
-      Logger.info('ping: ' ++ recv_msg.data)
+        :ok = Rclex.start_node(node_name)
+        node_name
+      end
 
-      Rclex.Publisher.publish([publisher], [Utils.create_payload(recv_msg.data)])
-    end)
+    for {node_name, index} <- Enum.with_index(node_names) do
+      index = String.pad_leading("#{index}", 3, "0")
 
-    {:ok, nil}
+      ping_topic =
+        case ping_pub do
+          :single -> "/ping000"
+          :multiple -> "/ping#{index}"
+        end
+
+      pong_topic =
+        case ping_sub do
+          :single -> "/pong000"
+          :multiple -> "/pong#{index}"
+        end
+
+      :ok =
+        Rclex.start_subscription(
+          fn message ->
+            binary = message.data
+            binary = binary_part(IO.iodata_to_binary([index, binary]), 0, byte_size(binary))
+            Rclex.publish(%{message | data: binary}, pong_topic, node_name)
+          end,
+          StdMsgs.Msg.String,
+          ping_topic,
+          node_name
+        )
+
+      :ok = Rclex.start_publisher(StdMsgs.Msg.String, pong_topic, node_name)
+    end
+
+    {:ok, %{node_count: node_count, node_names: node_names}}
+  end
+
+  def terminate(:normal, state) do
+    for node_name <- state.node_names do
+      Rclex.stop_node(node_name)
+    end
   end
 end

@@ -25,7 +25,7 @@ defmodule PingPongMeasurerRclex.MixProject do
       {:nimble_csv, "~> 1.1"},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
       {:flow, "~> 1.0"},
-      {:os_info_measurer, git: "https://github.com/b5g-ex/os_info_measurer.git"}
+      {:os_info_measurer, git: "https://github.com/b5g-ex/os_info_measurer.git", tag: "v0.1.1"}
     ]
   end
 end

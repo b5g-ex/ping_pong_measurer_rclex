@@ -6,7 +6,7 @@
   "mix_test_watch": {:hex, :mix_test_watch, "1.1.0", "330bb91c8ed271fe408c42d07e0773340a7938d8a0d281d57a14243eae9dc8c3", [:mix], [{:file_system, "~> 0.2.1 or ~> 0.3", [hex: :file_system, repo: "hexpm", optional: false]}], "hexpm", "52b6b1c476cbb70fd899ca5394506482f12e5f6b0d6acff9df95c7f1e0812ec3"},
   "nimble_csv": {:hex, :nimble_csv, "1.2.0", "4e26385d260c61eba9d4412c71cea34421f296d5353f914afe3f2e71cce97722", [:mix], [], "hexpm", "d0628117fcc2148178b034044c55359b26966c6eaa8e2ce15777be3bbc91b12a"},
   "nimble_parsec": {:hex, :nimble_parsec, "1.4.0", "51f9b613ea62cfa97b25ccc2c1b4216e81df970acd8e16e8d1bdc58fef21370d", [:mix], [], "hexpm", "9c565862810fb383e9838c1dd2d7d2c437b3d13b267414ba6af33e50d2d1cf28"},
-  "os_info_measurer": {:git, "https://github.com/b5g-ex/os_info_measurer.git", "6ed7e00195085a807284219029e5f627ad9befe0", []},
+  "os_info_measurer": {:git, "https://github.com/b5g-ex/os_info_measurer.git", "75c42e7f7b233113c1bf0c95cf80c61c34eff6bf", [tag: "v0.1.1"]},
   "rclex": {:hex, :rclex, "0.10.1", "dcc803c82185fcb789a14e7d0d96ea4b2f9ae23b366add6435a90ef29ffebb30", [:make, :mix], [{:elixir_make, "~> 0.7", [hex: :elixir_make, repo: "hexpm", optional: false]}, {:nimble_parsec, "~> 1.0", [hex: :nimble_parsec, repo: "hexpm", optional: false]}], "hexpm", "c631deebf0d1726ccfba0d30191ebe7c492081f795bf8587decfc7613864c806"},
   "rclex_gen_msgs": {:hex, :rclex_gen_msgs, "0.1.0", "265c9dc6a5e820e12a669d3c5eedcaf1a89d340f93b99ae6f5505a610850cc92", [:mix], [], "hexpm", "a6b190dcfb98d45452eeab4145250f9ea4ed65444bf4a146cbe5ed704ae625fb"},
 }

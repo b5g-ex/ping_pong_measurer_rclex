@@ -22,7 +22,7 @@ defmodule PingPongMeasurerRclex.MixProject do
   defp deps do
     [
       {:rclex,
-       git: "https://github.com/rclex/rclex.git", ref: "0260d404c13b9ed7528aa1a82c2c88d65678c675"},
+       git: "https://github.com/rclex/rclex.git", ref: "0c2e05d43877f012290245a838daf5319c474bc6"},
       {:nimble_csv, "~> 1.1"},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
       {:flow, "~> 1.0"},
